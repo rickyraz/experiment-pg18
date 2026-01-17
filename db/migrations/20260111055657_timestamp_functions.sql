@@ -1,6 +1,11 @@
 -- +goose Up
 -- +goose StatementBegin
--- Timestamp ke UUID minimum (untuk >= comparison)
+
+-- TIDAK PERLU  uuidv7_to_timestamp  (sudah native) -> uuid_extract_timestamp()
+-- DROP FUNCTION IF EXISTS uuid_to_ts(UUID);
+-- DROP FUNCTION IF EXISTS uuidv7_to_timestamp(UUID);
+
+-- MASIH PERLU (untuk index-friendly time range queries)
 CREATE OR REPLACE FUNCTION ts_to_uuid_min(ts TIMESTAMPTZ)
 RETURNS UUID AS $$
 DECLARE
@@ -15,7 +20,7 @@ BEGIN
     )::UUID;
 END;
 $$ LANGUAGE plpgsql IMMUTABLE PARALLEL SAFE;
--- Timestamp ke UUID maximum (untuk < atau <= comparison)
+
 CREATE OR REPLACE FUNCTION ts_to_uuid_max(ts TIMESTAMPTZ)
 RETURNS UUID AS $$
 DECLARE
@@ -30,6 +35,15 @@ BEGIN
     )::UUID;
 END;
 $$ LANGUAGE plpgsql IMMUTABLE PARALLEL SAFE;
+
+-- Extract timestamp (NATIVE)
+-- SELECT uuid_extract_timestamp(id) AS created_at FROM orders;
+
+-- -- Query by date range (CUSTOM - index friendly)
+-- SELECT * FROM orders
+-- WHERE id >= ts_to_uuid_min('2025-01-01'::TIMESTAMPTZ)
+--   AND id < ts_to_uuid_min('2025-02-01'::TIMESTAMPTZ);
+
 -- +goose StatementEnd
 
 -- +goose Down
